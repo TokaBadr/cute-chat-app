@@ -16,12 +16,19 @@ def handle_client(conn, addr):
                 break
             
             # Broadcast the message to all OTHER clients
+            clients_to_remove = []
             for client in connected_clients:
                 if client != conn:
                     try:
                         client.sendall(data)
                     except:
-                        connected_clients.remove(client)
+                        clients_to_remove.append(client)
+            
+            # Safely clean up broken connections
+            for c in clients_to_remove:
+                if c in connected_clients:
+                    connected_clients.remove(c)
+
         except Exception as e:
             break
             
@@ -35,22 +42,20 @@ def start_server():
     port = int(os.environ.get("PORT", 65432))
     
     server_socket = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
-    
-    # ADD THIS NEW LINE RIGHT HERE:
-    # This tells Windows: "If this port is stuck, forcefully take it over!"
     server_socket.setsockopt(socket.SOL_SOCKET, socket.SO_REUSEADDR, 1)
-    
     server_socket.bind(('0.0.0.0', port))
     server_socket.listen()
-    
+
     print(f"Server is running and listening on port {port}...")
 
     while True:
-        conn, addr = server_socket.accept()
-        client_thread = threading.Thread(target=handle_client, args=(conn, addr))
-        client_thread.daemon = True
-        client_thread.start()
+        try:
+            conn, addr = server_socket.accept()
+            client_thread = threading.Thread(target=handle_client, args=(conn, addr))
+            client_thread.daemon = True
+            client_thread.start()
+        except:
+            break
 
 if __name__ == "__main__":
     start_server()
-    
