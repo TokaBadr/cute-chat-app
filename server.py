@@ -11,7 +11,7 @@ def handle_client(conn, addr):
 
     while True:
         try:
-            data = conn.recv(1024)
+            data = conn.recv(4096)
             if not data:
                 break
             
